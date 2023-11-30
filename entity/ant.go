@@ -19,6 +19,12 @@ const (
 	DOWN_RIGHT Direction = "DOWN_RIGHT"
 )
 
+type AntState string
+const (
+	SEEKER AntState = "SEEKER"
+	RETURNER AntState = "RETURNER"
+)
+
 type Ant struct {
 	posX int32
 	posY int32
@@ -34,14 +40,26 @@ func NewAnt(posX int32, posY int32) *Ant {
 
 func (a *Ant) Move(dir Direction) {
 	switch dir {
-	case "UP":
-		a.posY++
-	case "DOWN":
-		a.posY--
-	case "LEFT":
-		a.posX--
-	case "RIGHT":
-		a.posX++
+	case UP:
+		a.posY -= 1
+	case DOWN:
+		a.posY += 1
+	case LEFT:
+		a.posX -= 1
+	case RIGHT:
+		a.posX += 1
+	case UP_LEFT:
+		a.posX -= 1
+		a.posY -= 1
+	case UP_RIGHT:
+		a.posX += 1
+		a.posY -= 1
+	case DOWN_LEFT:
+		a.posX -= 1
+		a.posY += 1
+	case DOWN_RIGHT:
+		a.posX += 1
+		a.posY += 1
 	}
 	a.currDir = dir
 }
