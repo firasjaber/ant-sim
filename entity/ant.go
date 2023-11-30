@@ -3,10 +3,9 @@ package entity
 import (
 	"math/rand"
 
+	"github.com/firasjaber/ant-sim/config"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
-
-const wanderRate = 0.1
 
 type Direction string
 const (
@@ -57,7 +56,7 @@ func (a *Ant) Wander() {
 	}
 	// pick if we should wander based on the wander rate
 	// if we don't wander, move in the current direction
-	wRand := int(wanderRate * 10)
+	wRand := int(config.WanderingRate * 10)
 	cRand := rand.Intn(10)
 	if cRand > wRand {
 		a.Move(a.currDir)
