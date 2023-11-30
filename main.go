@@ -12,14 +12,14 @@ func updateAnts(ants []*entity.Ant) {
 }
 
 func init() {
-	rl.InitWindow(800, 450, "raylib [core] example - basic window")
+	rl.InitWindow(200, 200, "raylib [core] example - basic window")
 	rl.SetTargetFPS(60)
 	rl.SetExitKey(0) 
 }
 
 func main() {
 	// spawn an ant
-	ant := entity.NewAnt(50, 50)
+	ant := entity.NewAnt(100, 100)
 
 	// build ants list
 	ants := []*entity.Ant{ant}
