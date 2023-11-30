@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"log"
 	"math/rand"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -50,37 +49,23 @@ func (a *Ant) Move(dir Direction) {
 
 // wander randomly
 func (a *Ant) Wander() {
+	// if we are at the edge of the screen, turn around
+	if a.posX <= 5 || a.posX >= 195 || a.posY <= 5 || a.posY >= 195 {
+		oppisiteDir := getOppisiteDirection(a.currDir)
+		a.Move(oppisiteDir)
+		return
+	}
 	// pick if we should wander based on the wander rate
 	// if we don't wander, move in the current direction
 	wRand := int(wanderRate * 10)
 	cRand := rand.Intn(10)
 	if cRand > wRand {
 		a.Move(a.currDir)
-		log.Println("moving in current direction")
 		return
 	}
-	log.Println("wandering")
 	// pick a random direction that depends on the current ant direction so it can't rotate more than 90 degrees
 	// which means elimate the possibliity of going in the opposite direction
-	possibleDirections := []Direction{}
-	switch a.currDir {
-	case UP:
-		possibleDirections = []Direction{UP_LEFT, UP_RIGHT}
-	case DOWN:
-		possibleDirections = []Direction{DOWN_LEFT, DOWN_RIGHT}
-	case LEFT:
-		possibleDirections = []Direction{UP_LEFT, DOWN_LEFT}
-	case RIGHT:
-		possibleDirections = []Direction{UP_RIGHT, DOWN_RIGHT}
-	case UP_LEFT:
-		possibleDirections = []Direction{UP, LEFT}
-	case UP_RIGHT:
-		possibleDirections = []Direction{UP, RIGHT}
-	case DOWN_LEFT:
-		possibleDirections = []Direction{DOWN, LEFT}
-	case DOWN_RIGHT:
-		possibleDirections = []Direction{DOWN, RIGHT}
-	}
+	possibleDirections := getPossibleDirections(a.currDir)
 	// print possible direction and curr dir
 	direction := possibleDirections[rl.GetRandomValue(0, 1)]
 
@@ -94,4 +79,48 @@ func (a *Ant) Draw() {
 func (a *Ant) Update() {
 	a.Wander()
 	a.Draw()
+}
+
+func getOppisiteDirection(dir Direction) Direction {
+	switch dir {
+	case UP:
+		return DOWN
+	case DOWN:
+		return UP
+	case LEFT:
+		return RIGHT
+	case RIGHT:
+		return LEFT
+	case UP_LEFT:
+		return DOWN_RIGHT
+	case UP_RIGHT:
+		return DOWN_LEFT
+	case DOWN_LEFT:
+		return UP_RIGHT
+	case DOWN_RIGHT:
+		return UP_LEFT
+	}
+	return dir
+}
+
+func getPossibleDirections(dir Direction) []Direction {
+	switch dir {
+	case UP:
+		return []Direction{UP_LEFT, UP_RIGHT}
+	case DOWN:
+		return []Direction{DOWN_LEFT, DOWN_RIGHT}
+	case LEFT:
+		return []Direction{UP_LEFT, DOWN_LEFT}
+	case RIGHT:
+		return []Direction{UP_RIGHT, DOWN_RIGHT}
+	case UP_LEFT:
+		return []Direction{UP, LEFT}
+	case UP_RIGHT:
+		return []Direction{UP, RIGHT}
+	case DOWN_LEFT:
+		return []Direction{DOWN, LEFT}
+	case DOWN_RIGHT:
+		return []Direction{DOWN, RIGHT}
+	}
+	return []Direction{dir}
 }
