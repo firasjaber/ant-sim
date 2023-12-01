@@ -25,16 +25,20 @@ func init() {
 }
 
 func main() {
+	homeXPos := config.WindowWidth / 2
+	homeYPos := config.WindowHeight / 2
+	// create the home
+	home := entity.NewHome(int32(homeXPos), int32(homeYPos))
 
 	// spawn ants
 	// loop through the ants number range and create new ants
 	ants := []*entity.Ant{}
 	for i := 0; i < config.AntsCount; i++ {
 		// create a new ant
-		ant := entity.NewAnt(100, 100)
+		ant := entity.NewAnt(int32(homeXPos), int32(homeYPos))
 		// add the ant to the ants list
 		ants = append(ants, ant)
-	} 
+	}
 
 	// spawn food
 	// loop through the food number range and create new food on random positions
@@ -53,7 +57,8 @@ func main() {
 		
 		// update the entities
 		updateFood(food)
-		updateAnts(ants)
+		updateAnts(ants, food, home)
+		home.Update()
 
 		// end the drawing
 		rl.EndDrawing()
