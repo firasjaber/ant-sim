@@ -2,13 +2,13 @@ package config
 
 const (
 	// Window
-	WindowWidth = 300
-	WindowHeight = 300
-	WindowTitle = "Ant Colony Simulation"
-	TargetFPS = 60
+	WindowWidth  = 500
+	WindowHeight = 500
+	WindowTitle  = "Ant Colony Simulation"
+	TargetFPS    = 60
 	// Ants
-	AntsCount = 8
-	WanderingRate = 0.1
+	AntsCount     = 10
+	WanderingRate = 0.07
 	// Food
-	FoodCount = 10
+	FoodCount int = 20
 )
