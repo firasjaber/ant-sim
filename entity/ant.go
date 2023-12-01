@@ -21,6 +21,7 @@ const (
 )
 
 type AntState string
+
 const (
 	SEEKER   AntState = "SEEKER"
 	RETURNER AntState = "RETURNER"
@@ -30,16 +31,20 @@ type Ant struct {
 	posX    int32
 	posY    int32
 	currDir Direction
+	state   AntState
+	path    []rl.Vector2
 }
 
 func NewAnt(posX int32, posY int32) *Ant {
 	// pick a random current direction
 	directions := []Direction{UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT}
 	direction := directions[rl.GetRandomValue(0, 7)]
-	return &Ant{posX: posX, posY: posY, currDir: direction}
+	return &Ant{posX: posX, posY: posY, currDir: direction, state: SEEKER, path: []rl.Vector2{}}
 }
 
 func (a *Ant) Move(dir Direction) {
+	// append the previous pos to the path
+	a.path = append(a.path, rl.Vector2{X: float32(a.posX), Y: float32(a.posY)})
 	switch dir {
 	case UP:
 		a.posY -= 1
@@ -90,13 +95,52 @@ func (a *Ant) Wander() {
 	a.Move(direction)
 }
 
+func (a *Ant) FollowPathHome() {
+	if len(a.path) > 0 {
+		a.posX = int32(a.path[len(a.path)-1].X)
+		a.posY = int32(a.path[len(a.path)-1].Y)
+		a.path = a.path[:len(a.path)-1]
+	}
+}
+
 func (a *Ant) Draw() {
+	// draw the path
+	for _, p := range a.path {
+		rl.DrawCircle(int32(p.X), int32(p.Y), 1, rl.ColorAlpha(rl.Purple, 0.1))
+	}
+	// draw the ant
+	if a.state == RETURNER {
+		rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.Yellow)
+		return
+	}
 	rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.White)
 }
 
 func (a *Ant) Update() {
-	a.Wander()
+	// if the ant is a seeker, wander
+	// if the ant is a returner, follow the path to return home
+	if a.state == SEEKER {
+		a.Wander()
+	} else if a.state == RETURNER {
+		a.FollowPathHome()
+	}
 	a.Draw()
+}
+
+func (a *Ant) GetRectangle() rl.Rectangle {
+	return rl.Rectangle{X: float32(a.posX), Y: float32(a.posY), Width: 10, Height: 10}
+}
+
+func (a *Ant) GetState() AntState {
+	return a.state
+}
+
+func (a *Ant) SetState(state AntState) {
+	a.state = state
+}
+
+func (a *Ant) ClearPath() {
+	a.path = []rl.Vector2{}
 }
 
 func getOppisiteDirection(dir Direction) Direction {
