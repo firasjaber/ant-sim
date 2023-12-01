@@ -8,26 +8,27 @@ import (
 )
 
 type Direction string
+
 const (
-	UP Direction = "UP"
-	DOWN Direction = "DOWN"
-	LEFT Direction = "LEFT"
-	RIGHT Direction = "RIGHT"
-	UP_LEFT Direction = "UP_LEFT"
-	UP_RIGHT Direction = "UP_RIGHT"
-	DOWN_LEFT Direction = "DOWN_LEFT"
+	UP         Direction = "UP"
+	DOWN       Direction = "DOWN"
+	LEFT       Direction = "LEFT"
+	RIGHT      Direction = "RIGHT"
+	UP_LEFT    Direction = "UP_LEFT"
+	UP_RIGHT   Direction = "UP_RIGHT"
+	DOWN_LEFT  Direction = "DOWN_LEFT"
 	DOWN_RIGHT Direction = "DOWN_RIGHT"
 )
 
 type AntState string
 const (
-	SEEKER AntState = "SEEKER"
+	SEEKER   AntState = "SEEKER"
 	RETURNER AntState = "RETURNER"
 )
 
 type Ant struct {
-	posX int32
-	posY int32
+	posX    int32
+	posY    int32
 	currDir Direction
 }
 
