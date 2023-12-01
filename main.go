@@ -8,8 +8,9 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func updateAnts(ants []*entity.Ant) {
+func updateAnts(ants []*entity.Ant, food []*entity.Food, home *entity.Home) {
 	for _, ant := range ants {
+		checkFoodCollision(ant, food, home)
 		ant.Update()
 	}
 }
@@ -80,4 +81,27 @@ func main() {
 	}
 
 	rl.CloseWindow()
+}
+
+func checkFoodCollision(ant *entity.Ant, food []*entity.Food, home *entity.Home) {
+	if ant.GetState() == entity.SEEKER {
+		for _, f := range food {
+			// TODO: remove the destroyed food from the food list so we don't waste collision checks
+			if f.IsDestroyed() {
+				continue
+			}
+			// ant collide with a food, change the ant state to RETURNER (collect it)
+			if rl.CheckCollisionRecs(ant.GetRectangle(), f.GetRectangle()) {
+				ant.SetState(entity.RETURNER)
+				f.Destroy()
+			}
+		}
+	}
+
+	// ant is a RETURNER and collide with the home, change the ant state to SEEKER (go find more food)
+	if ant.GetState() == entity.RETURNER && rl.CheckCollisionCircleRec(home.GetPosition(), 15, ant.GetRectangle()) {
+		ant.SetState(entity.SEEKER)
+		ant.ClearPath()
+		home.AddFood()
+	}
 }
