@@ -68,15 +68,15 @@ func (a *Ant) Move(dir Direction) {
 // wander randomly
 func (a *Ant) Wander() {
 	// if we are at the edge of the screen, turn around
-	if a.posX <= 5 || a.posX >= 195 || a.posY <= 5 || a.posY >= 195 {
+	if a.posX <= 5 || a.posX >= (config.WindowWidth-5) || a.posY <= 5 || a.posY >= (config.WindowHeight-5) {
 		oppisiteDir := getOppisiteDirection(a.currDir)
 		a.Move(oppisiteDir)
 		return
 	}
 	// pick if we should wander based on the wander rate
 	// if we don't wander, move in the current direction
-	wRand := int(config.WanderingRate * 10)
-	cRand := rand.Intn(10)
+	wRand := int(config.WanderingRate * 100)
+	cRand := rand.Intn(100)
 	if cRand > wRand {
 		a.Move(a.currDir)
 		return
