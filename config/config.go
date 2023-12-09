@@ -7,8 +7,9 @@ const (
 	WindowTitle  = "Ant Colony Simulation"
 	TargetFPS    = 60
 	// Ants
-	AntsCount     = 10
-	WanderingRate = 0.07
+	AntsCount          = 30
+	WanderingRate      = 0.05
+	PheromoneDecayRate = 0.15
 	// Food
 	FoodCount int = 20
 )
