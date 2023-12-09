@@ -3,7 +3,9 @@ package entity
 import (
 	"math/rand"
 
+	lls "github.com/emirpasic/gods/stacks/linkedliststack"
 	"github.com/firasjaber/ant-sim/config"
+	"github.com/firasjaber/ant-sim/utils"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -32,19 +34,20 @@ type Ant struct {
 	posY    int32
 	currDir Direction
 	state   AntState
-	path    []rl.Vector2
+	path    *lls.Stack
 }
 
 func NewAnt(posX int32, posY int32) *Ant {
 	// pick a random current direction
 	directions := []Direction{UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT}
 	direction := directions[rl.GetRandomValue(0, 7)]
-	return &Ant{posX: posX, posY: posY, currDir: direction, state: SEEKER, path: []rl.Vector2{}}
+
+	return &Ant{posX: posX, posY: posY, currDir: direction, state: SEEKER, path: lls.New()}
 }
 
 func (a *Ant) Move(dir Direction) {
 	// append the previous pos to the path
-	a.path = append(a.path, rl.Vector2{X: float32(a.posX), Y: float32(a.posY)})
+	a.path.Push(rl.Vector2{X: float32(a.posX), Y: float32(a.posY)})
 	switch dir {
 	case UP:
 		a.posY -= 1
@@ -96,18 +99,19 @@ func (a *Ant) Wander() {
 }
 
 func (a *Ant) FollowPathHome() {
-	if len(a.path) > 0 {
-		a.posX = int32(a.path[len(a.path)-1].X)
-		a.posY = int32(a.path[len(a.path)-1].Y)
-		a.path = a.path[:len(a.path)-1]
+	if a.path.Size() > 0 {
+		lastPos, _ := a.path.Peek()
+		a.posX = int32(lastPos.(rl.Vector2).X)
+		a.posY = int32(lastPos.(rl.Vector2).Y)
+		a.path.Pop()
 	}
 }
 
 func (a *Ant) Draw() {
 	// draw the path
-	for _, p := range a.path {
-		rl.DrawCircle(int32(p.X), int32(p.Y), 1, rl.ColorAlpha(rl.Purple, 0.1))
-	}
+	// for _, p := range a.path {
+	// 	rl.DrawCircle(int32(p.X), int32(p.Y), 1, rl.ColorAlpha(rl.Purple, 0.1))
+	// }
 	// draw the ant
 	if a.state == RETURNER {
 		rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.Yellow)
@@ -116,10 +120,28 @@ func (a *Ant) Draw() {
 	rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.White)
 }
 
-func (a *Ant) Update() {
+func (a *Ant) Update(pheromones []*Pheromone) {
 	// if the ant is a seeker, wander
 	// if the ant is a returner, follow the path to return home
 	if a.state == SEEKER {
+		if len(pheromones) > 0 {
+			if len(pheromones) == 0 {
+				a.Wander()
+				return
+			}
+			// pick the pheromone with the highest concentration
+			pWithHighestConcentration := pheromones[0]
+			for _, p := range pheromones {
+				if p.GetConcentration() > pWithHighestConcentration.GetConcentration() {
+					pWithHighestConcentration = p
+				}
+			}
+			// move the ant towards the pheromone
+			a.posX = pWithHighestConcentration.GetXPos()
+			a.posY = pWithHighestConcentration.GetYPos()
+			a.Draw()
+			return
+		}
 		a.Wander()
 	} else if a.state == RETURNER {
 		a.FollowPathHome()
@@ -135,12 +157,16 @@ func (a *Ant) GetState() AntState {
 	return a.state
 }
 
+func (a *Ant) GetPosition() (int32, int32) {
+	return a.posX, a.posY
+}
+
 func (a *Ant) SetState(state AntState) {
 	a.state = state
 }
 
 func (a *Ant) ClearPath() {
-	a.path = []rl.Vector2{}
+	a.path.Clear()
 }
 
 func getOppisiteDirection(dir Direction) Direction {
@@ -185,4 +211,26 @@ func getPossibleDirections(dir Direction) []Direction {
 		return []Direction{DOWN, RIGHT}
 	}
 	return []Direction{dir}
+}
+
+func (ant *Ant) GetPossiblePheromonesCoordsToFollow() []utils.Coord {
+	switch ant.currDir {
+	case UP:
+		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY + 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX - 1, Y: ant.posY + 1}}
+	case DOWN:
+		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY + 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX - 1, Y: ant.posY - 1}}
+	case LEFT:
+		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY - 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX - 1, Y: ant.posY + 1}}
+	case RIGHT:
+		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY + 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX + 1, Y: ant.posY - 1}}
+	case UP_LEFT:
+		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY + 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY + 1}}
+	case UP_RIGHT:
+		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY + 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY + 1}}
+	case DOWN_LEFT:
+		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY - 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY - 1}}
+	case DOWN_RIGHT:
+		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY - 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY - 1}}
+	}
+	return []utils.Coord{}
 }
