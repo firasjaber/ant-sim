@@ -3,8 +3,8 @@ package entity
 import rl "github.com/gen2brain/raylib-go/raylib"
 
 type Food struct {
-	posX int32
-	posY int32
+	posX      int32
+	posY      int32
 	destroyed bool
 }
 
@@ -17,7 +17,7 @@ func (f *Food) Update() {
 }
 
 func (f *Food) Draw() {
-	if (f.destroyed) {
+	if f.destroyed {
 		return
 	}
 	rl.DrawRectangle(f.posX, f.posY, 5, 5, rl.Green)
@@ -25,6 +25,14 @@ func (f *Food) Draw() {
 
 func (f *Food) GetPosition() rl.Vector2 {
 	return rl.Vector2{X: float32(f.posX), Y: float32(f.posY)}
+}
+
+func (f *Food) GetXPos() int32 {
+	return f.posX
+}
+
+func (f *Food) GetYPos() int32 {
+	return f.posY
 }
 
 func (f *Food) Destroy() {
