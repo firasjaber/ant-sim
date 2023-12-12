@@ -17,7 +17,7 @@ func (h *Home) Update() {
 }
 
 func (h *Home) Draw() {
-	rl.DrawRectangleLines(h.posX, h.posY, 15, 15, rl.Brown)
+	rl.DrawRectangle(h.posX, h.posY, 30, 30, rl.Brown)
 }
 
 func (h *Home) GetPosition() rl.Vector2 {
@@ -29,7 +29,7 @@ func (h *Home) GetFoodCount() int32 {
 }
 
 func (h *Home) GetRectangle() rl.Rectangle {
-	return rl.NewRectangle(float32(h.posX), float32(h.posY), 15, 15)
+	return rl.NewRectangle(float32(h.posX), float32(h.posY), 30, 30)
 }
 
 func (h *Home) AddFood() {
