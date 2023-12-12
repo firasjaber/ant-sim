@@ -5,7 +5,6 @@ import (
 
 	lls "github.com/emirpasic/gods/stacks/linkedliststack"
 	"github.com/firasjaber/ant-sim/config"
-	"github.com/firasjaber/ant-sim/utils"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -121,31 +120,32 @@ func (a *Ant) Draw() {
 }
 
 func (a *Ant) Update(pheromones []*Pheromone) {
-	// if the ant is a seeker, wander
-	// if the ant is a returner, follow the path to return home
-	if a.state == SEEKER {
-		if len(pheromones) > 0 {
-			if len(pheromones) == 0 {
-				a.Wander()
-				return
+	if a.state == SEEKER && len(pheromones) > 0 {
+		// pick the pheromone with the highest concentration
+		pWithHighestConcentration := pheromones[0]
+		for _, p := range pheromones {
+			if p.GetConcentration() < pWithHighestConcentration.GetConcentration() {
+				pWithHighestConcentration = p
 			}
-			// pick the pheromone with the highest concentration
-			pWithHighestConcentration := pheromones[0]
-			for _, p := range pheromones {
-				if p.GetConcentration() > pWithHighestConcentration.GetConcentration() {
-					pWithHighestConcentration = p
-				}
-			}
-			// move the ant towards the pheromone
-			a.posX = pWithHighestConcentration.GetXPos()
-			a.posY = pWithHighestConcentration.GetYPos()
-			a.Draw()
-			return
 		}
+		pPosX := pWithHighestConcentration.GetXPos()
+		pPosY := pWithHighestConcentration.GetYPos()
+		if a.getDirOutOfTargetPosition(pPosX, pPosY) == getOppisiteDirection(a.currDir) {
+			a.Wander()
+		} else {
+			// move the ant towards the pheromone
+			a.currDir = a.getDirOutOfTargetPosition(pPosX, pPosY)
+			a.posX = pPosX
+			a.posY = pPosY
+			a.path.Push(rl.Vector2{X: float32(a.posX), Y: float32(a.posY)})
+		}
+
+	} else if a.state == SEEKER && len(pheromones) == 0 {
 		a.Wander()
 	} else if a.state == RETURNER {
 		a.FollowPathHome()
 	}
+
 	a.Draw()
 }
 
@@ -213,24 +213,23 @@ func getPossibleDirections(dir Direction) []Direction {
 	return []Direction{dir}
 }
 
-func (ant *Ant) GetPossiblePheromonesCoordsToFollow() []utils.Coord {
-	switch ant.currDir {
-	case UP:
-		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY + 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX - 1, Y: ant.posY + 1}}
-	case DOWN:
-		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY + 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX - 1, Y: ant.posY - 1}}
-	case LEFT:
-		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY - 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX - 1, Y: ant.posY + 1}}
-	case RIGHT:
-		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY + 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX + 1, Y: ant.posY - 1}}
-	case UP_LEFT:
-		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY + 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY + 1}}
-	case UP_RIGHT:
-		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY + 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY + 1}}
-	case DOWN_LEFT:
-		return []utils.Coord{{X: ant.posX - 1, Y: ant.posY - 1}, {X: ant.posX - 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY - 1}}
-	case DOWN_RIGHT:
-		return []utils.Coord{{X: ant.posX + 1, Y: ant.posY - 1}, {X: ant.posX + 1, Y: ant.posY}, {X: ant.posX, Y: ant.posY - 1}}
+func (a *Ant) getDirOutOfTargetPosition(targetX int32, targetY int32) Direction {
+	if a.posX < targetX && a.posY < targetY {
+		return DOWN_RIGHT
+	} else if a.posX < targetX && a.posY > targetY {
+		return UP_RIGHT
+	} else if a.posX > targetX && a.posY < targetY {
+		return DOWN_LEFT
+	} else if a.posX > targetX && a.posY > targetY {
+		return UP_LEFT
+	} else if a.posX == targetX && a.posY < targetY {
+		return DOWN
+	} else if a.posX == targetX && a.posY > targetY {
+		return UP
+	} else if a.posX < targetX && a.posY == targetY {
+		return RIGHT
+	} else if a.posX > targetX && a.posY == targetY {
+		return LEFT
 	}
-	return []utils.Coord{}
+	return a.currDir
 }
