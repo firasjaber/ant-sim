@@ -1,13 +1,11 @@
 package scene
 
 import (
-	"log"
 	"slices"
 	"strconv"
 
 	"github.com/firasjaber/ant-sim/config"
 	"github.com/firasjaber/ant-sim/entity"
-	"github.com/firasjaber/ant-sim/utils"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -63,12 +61,25 @@ func NewScene() *Scene {
 	// 	food = append(food, f)
 	// }
 
-	initFoodSpawnXPos := (config.WindowWidth / 2) + config.WindowWidth/4
-	initFoodSpawnYPos := config.WindowHeight / 2
+	initFoodSpawnXPos := config.WindowWidth/2 + config.WindowWidth/4
+	initFoodSpawnYPos := config.WindowHeight / 4
 	lastFoodSpawnXPos := initFoodSpawnXPos + config.FoodCount
 	lastFoodSpawnYPos := initFoodSpawnYPos + config.FoodCount
 	for i := initFoodSpawnXPos; i < lastFoodSpawnXPos; i++ {
 		for j := initFoodSpawnYPos; j < lastFoodSpawnYPos; j++ {
+			// create a new food
+			f := entity.NewFood(int32(i), int32(j))
+			// add the food to the food list
+			food = append(food, f)
+		}
+	}
+
+	initFoodSpawnTwoXPos := (config.WindowWidth / 2) + config.WindowWidth/4
+	initFoodSpawnTwoYPos := (config.WindowHeight / 4) + config.WindowHeight/2
+	lastFoodSpawnTwoXPos := initFoodSpawnTwoXPos + config.FoodCount
+	lastFoodSpawnTwoYPos := initFoodSpawnTwoYPos + config.FoodCount
+	for i := initFoodSpawnTwoXPos; i < lastFoodSpawnTwoXPos; i++ {
+		for j := initFoodSpawnTwoYPos; j < lastFoodSpawnTwoYPos; j++ {
 			// create a new food
 			f := entity.NewFood(int32(i), int32(j))
 			// add the food to the food list
@@ -102,12 +113,6 @@ func (s *Scene) Run() {
 }
 
 func (s *Scene) AddPheromones(posX int32, posY int32) {
-	// create a new pheromone only if there is no pheromone on the same position on the grid
-	if s.grid[posX][posY] != nil {
-		// log.Println("Pheromone already exists on this position")
-		// log.Println(s.pheromones[0])
-		return
-	}
 	// create a new pheromone
 	p := entity.NewPheromone(posX, posY)
 	// add the pheromone to the grid
@@ -119,6 +124,9 @@ func (s *Scene) AddPheromones(posX int32, posY int32) {
 func (s *Scene) updatePheromones() {
 	// remove the pheromones with concentration 0
 	for i, p := range s.pheromones {
+		if p == nil {
+			continue
+		}
 		if p.GetConcentration() <= 0 {
 			// s.pheromones = append(s.pheromones[:i], s.pheromones[i+1:]...)
 			s.pheromones = slices.Delete(s.pheromones, i, i+1)
@@ -190,7 +198,6 @@ func checkAntCollision(ant *entity.Ant, food []*entity.Food, home *entity.Home) 
 
 	// ant is a RETURNER and collide with the home, change the ant state to SEEKER (go find more food)
 	if ant.GetState() == entity.RETURNER && rl.CheckCollisionRecs(ant.GetRectangle(), home.GetRectangle()) {
-		log.Println("Ant returned home")
 		ant.SetState(entity.SEEKER)
 		ant.ClearPath()
 		home.AddFood()
@@ -200,31 +207,15 @@ func checkAntCollision(ant *entity.Ant, food []*entity.Food, home *entity.Home) 
 func getPheromoneNearby(ant *entity.Ant, s *Scene) []*entity.Pheromone {
 	antPosX, antPosY := ant.GetPosition()
 
-	eligblePheromonesCoords := ant.GetPossiblePheromonesCoordsToFollow()
 	nearbyPheromones := []*entity.Pheromone{}
 	// check if there is a pheromone nearby in the range of 5 pixels
 	for i := antPosX - 1; i <= antPosX+1; i++ {
 		for j := antPosY - 1; j <= antPosY+1; j++ {
-			if s.grid[i][j] != nil && i != antPosX && j != antPosY {
-				currCoord := utils.Coord{X: i, Y: j}
-				if !isOneOfCoords(currCoord, eligblePheromonesCoords) {
-					nearbyPheromones = append(nearbyPheromones, s.grid[i][j].(*entity.Pheromone))
-				}
+			if s.grid[i][j] != nil && !(i == antPosX && j == antPosY) {
+				nearbyPheromones = append(nearbyPheromones, s.grid[i][j].(*entity.Pheromone))
 			}
 		}
 	}
-	if len(nearbyPheromones) > 0 {
-		log.Println("Nearby pheromones: ", len(nearbyPheromones))
-	}
 
 	return nearbyPheromones
-}
-
-func isOneOfCoords(coord utils.Coord, coords []utils.Coord) bool {
-	for _, c := range coords {
-		if c.X == coord.X && c.Y == coord.Y {
-			return true
-		}
-	}
-	return false
 }
