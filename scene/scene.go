@@ -1,8 +1,10 @@
 package scene
 
 import (
+	"log"
 	"slices"
 	"strconv"
+	"sync"
 
 	"github.com/firasjaber/ant-sim/config"
 	"github.com/firasjaber/ant-sim/entity"
@@ -54,12 +56,6 @@ func NewScene() *Scene {
 	// spawn food
 	// loop through the food number range and create new food on random positions
 	food := []*entity.Food{}
-	// for i := 0; i < config.FoodCount; i++ {
-	// 	// create a new food
-	// 	f := entity.NewFood(int32(rl.GetRandomValue(10, config.WindowWidth-10)), int32(rl.GetRandomValue(10, config.WindowHeight-10)))
-	// 	// add the food to the food list
-	// 	food = append(food, f)
-	// }
 
 	initFoodSpawnXPos := config.WindowWidth/2 + config.WindowWidth/4
 	initFoodSpawnYPos := config.WindowHeight / 4
@@ -102,7 +98,8 @@ func (s *Scene) Run() {
 		// update the entities
 		s.updateFood()
 		s.updateAnts()
-		s.updatePheromones()
+		// s.updatePheromones()
+		s.updatePheromonesOptimized()
 		s.home.Update()
 
 		// end the drawing
@@ -122,26 +119,84 @@ func (s *Scene) AddPheromones(posX int32, posY int32) {
 }
 
 func (s *Scene) updatePheromones() {
-	// remove the pheromones with concentration 0
 	for i, p := range s.pheromones {
+		// sanity check
+		if p == nil {
+			continue
+		}
+		// remove the pheromones with concentration 0
+		if p.GetConcentration() <= 0 {
+			s.pheromones = slices.Delete(s.pheromones, i, i+1)
+			// double check if the pheromone is in the grid is the same
+			// since it can be overwriten by new pheromone
+			// we detect that by the concentration
+			gridP := s.grid[p.GetXPos()][p.GetYPos()]
+			if gridP != nil && gridP.(*entity.Pheromone).GetConcentration() <= p.GetConcentration() {
+				s.grid[p.GetXPos()][p.GetYPos()] = nil
+			}
+			// else just update it
+		} else {
+			p.Update()
+		}
+	}
+}
+
+func (s *Scene) updatePheromonesOptimized() {
+	//log the frame number
+	numPheromones := len(s.pheromones)
+	if numPheromones == 0 {
+		return
+	}
+	log.Println("updatePheromonesOptimized started")
+
+	numCPU := 2 // You can adjust the chunk size based on your requirements
+	var wg sync.WaitGroup
+
+	chunkSize := (numPheromones + numCPU - 1) / numCPU
+
+	for i := 0; i < numPheromones; i += chunkSize {
+		end := i + chunkSize
+		if end > numPheromones {
+			end = numPheromones
+		}
+
+		wg.Add(1)
+		go s.processPheromoneChunk(i, end, &wg)
+	}
+
+	wg.Wait()
+	log.Println("updatePheromonesOptimized ended")
+	for _, p := range s.pheromones {
+		if p.GetConcentration() > 0 {
+			p.Update()
+		}
+	}
+}
+
+func (s *Scene) processPheromoneChunk(start, end int, wg *sync.WaitGroup) {
+	log.Println("process chunk started")
+
+	for i := start; i < end; i++ {
+		p := s.pheromones[i]
 		if p == nil {
 			continue
 		}
 		if p.GetConcentration() <= 0 {
-			// s.pheromones = append(s.pheromones[:i], s.pheromones[i+1:]...)
-			s.pheromones = slices.Delete(s.pheromones, i, i+1)
-			s.grid[p.GetXPos()][p.GetYPos()] = nil
+			gridP := s.grid[p.GetXPos()][p.GetYPos()]
+			if gridP != nil && gridP.(*entity.Pheromone).GetConcentration() <= p.GetConcentration() {
+				s.grid[p.GetXPos()][p.GetYPos()] = nil
+			}
 		}
 	}
-	for _, p := range s.pheromones {
-		p.Update()
-	}
+	wg.Done()
+	log.Println("process chunk ended")
 }
 
 func (s *Scene) updateAnts() {
 	for _, ant := range s.ants {
 		nearbyPheromones := []*entity.Pheromone{}
 		if ant.GetState() == entity.SEEKER {
+			// check collision with food
 			checkAntCollision(ant, s.food, s.home)
 			// check if there is a pheromone nearby
 			nearbyPheromones = getPheromoneNearby(ant, s)
@@ -150,6 +205,7 @@ func (s *Scene) updateAnts() {
 			// drop pheromones
 			antPosX, antPosY := ant.GetPosition()
 			s.AddPheromones(antPosX, antPosY)
+			// check collision with home
 			checkAntCollision(ant, s.food, s.home)
 		}
 		ant.Update(nearbyPheromones)
@@ -162,11 +218,14 @@ func (s *Scene) updateFood() {
 	// for i, f := range s.food {
 	// 	if f.IsDestroyed() {
 	// 		// s.food = append(s.food[:i], s.food[i+1:]...)
-	// 		// s.food = slices.Delete(s.food, i, i+1)
+	// 		s.food = slices.Delete(s.food, i, i+1)
 	// 		s.grid[f.GetXPos()][f.GetYPos()] = nil
 	// 	}
 	// }
 	for _, f := range s.food {
+		if f.IsDestroyed() {
+			continue
+		}
 		f.Update()
 	}
 }
