@@ -1,10 +1,9 @@
 package scene
 
 import (
-	"log"
-	"slices"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/firasjaber/ant-sim/config"
 	"github.com/firasjaber/ant-sim/entity"
@@ -22,7 +21,7 @@ type Scene struct {
 // implement a grid to represent the entities
 // the grid will be used to check for collisions
 
-func NewScene() *Scene {
+func NewScene(mapId int) *Scene {
 	rl.InitWindow(config.WindowWidth, config.WindowHeight, config.WindowTitle)
 	rl.SetTargetFPS(config.TargetFPS)
 	rl.SetExitKey(0)
@@ -36,69 +35,26 @@ func NewScene() *Scene {
 			grid[i][j] = nil
 		}
 	}
-	// span entites
-	// spawn home
-	homeXPos := config.WindowWidth/2 - (config.WindowWidth / 4)
-	homeYPos := config.WindowHeight / 2
-	// create the home
-	home := entity.NewHome(int32(homeXPos), int32(homeYPos))
+	entities := GetEntitiesByMapId(mapId)
 
-	// spawn ants
-	// loop through the ants number range and create new ants
-	ants := []*entity.Ant{}
-	for i := 0; i < config.AntsCount; i++ {
-		// create a new ant
-		ant := entity.NewAnt(int32(homeXPos), int32(homeYPos))
-		// add the ant to the ants list
-		ants = append(ants, ant)
-	}
-
-	// spawn food
-	// loop through the food number range and create new food on random positions
-	food := []*entity.Food{}
-
-	initFoodSpawnXPos := config.WindowWidth/2 + config.WindowWidth/4
-	initFoodSpawnYPos := config.WindowHeight / 4
-	lastFoodSpawnXPos := initFoodSpawnXPos + config.FoodCount
-	lastFoodSpawnYPos := initFoodSpawnYPos + config.FoodCount
-	for i := initFoodSpawnXPos; i < lastFoodSpawnXPos; i++ {
-		for j := initFoodSpawnYPos; j < lastFoodSpawnYPos; j++ {
-			// create a new food
-			f := entity.NewFood(int32(i), int32(j))
-			// add the food to the food list
-			food = append(food, f)
-		}
-	}
-
-	initFoodSpawnTwoXPos := (config.WindowWidth / 2) + config.WindowWidth/4
-	initFoodSpawnTwoYPos := (config.WindowHeight / 4) + config.WindowHeight/2
-	lastFoodSpawnTwoXPos := initFoodSpawnTwoXPos + config.FoodCount
-	lastFoodSpawnTwoYPos := initFoodSpawnTwoYPos + config.FoodCount
-	for i := initFoodSpawnTwoXPos; i < lastFoodSpawnTwoXPos; i++ {
-		for j := initFoodSpawnTwoYPos; j < lastFoodSpawnTwoYPos; j++ {
-			// create a new food
-			f := entity.NewFood(int32(i), int32(j))
-			// add the food to the food list
-			food = append(food, f)
-		}
-	}
-
-	return &Scene{ants: ants, food: food, home: home, pheromones: []*entity.Pheromone{}, grid: grid}
+	return &Scene{ants: entities.Ants, food: entities.Food, home: entities.Home, pheromones: []*entity.Pheromone{}, grid: grid}
 }
 
 func (s *Scene) Run() {
+	time.Sleep(1 * time.Second)
 	for !rl.WindowShouldClose() {
 		// begin the drawing and clear the screen
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Black)
 
 		// draw hud
-		s.updateHud()
+		if config.DrawHUD {
+			s.updateHud()
+		}
 
 		// update the entities
 		s.updateFood()
 		s.updateAnts()
-		// s.updatePheromones()
 		s.updatePheromonesOptimized()
 		s.home.Update()
 
@@ -118,41 +74,17 @@ func (s *Scene) AddPheromones(posX int32, posY int32) {
 	s.pheromones = append(s.pheromones, p)
 }
 
-func (s *Scene) updatePheromones() {
-	for i, p := range s.pheromones {
-		// sanity check
-		if p == nil {
-			continue
-		}
-		// remove the pheromones with concentration 0
-		if p.GetConcentration() <= 0 {
-			s.pheromones = slices.Delete(s.pheromones, i, i+1)
-			// double check if the pheromone is in the grid is the same
-			// since it can be overwriten by new pheromone
-			// we detect that by the concentration
-			gridP := s.grid[p.GetXPos()][p.GetYPos()]
-			if gridP != nil && gridP.(*entity.Pheromone).GetConcentration() <= p.GetConcentration() {
-				s.grid[p.GetXPos()][p.GetYPos()] = nil
-			}
-			// else just update it
-		} else {
-			p.Update()
-		}
-	}
-}
-
 func (s *Scene) updatePheromonesOptimized() {
 	//log the frame number
 	numPheromones := len(s.pheromones)
 	if numPheromones == 0 {
 		return
 	}
-	log.Println("updatePheromonesOptimized started")
 
-	numCPU := 2 // You can adjust the chunk size based on your requirements
+	numChunks := 1
 	var wg sync.WaitGroup
 
-	chunkSize := (numPheromones + numCPU - 1) / numCPU
+	chunkSize := (numPheromones + numChunks - 1) / numChunks
 
 	for i := 0; i < numPheromones; i += chunkSize {
 		end := i + chunkSize
@@ -165,7 +97,6 @@ func (s *Scene) updatePheromonesOptimized() {
 	}
 
 	wg.Wait()
-	log.Println("updatePheromonesOptimized ended")
 	for _, p := range s.pheromones {
 		if p.GetConcentration() > 0 {
 			p.Update()
@@ -174,22 +105,18 @@ func (s *Scene) updatePheromonesOptimized() {
 }
 
 func (s *Scene) processPheromoneChunk(start, end int, wg *sync.WaitGroup) {
-	log.Println("process chunk started")
-
 	for i := start; i < end; i++ {
 		p := s.pheromones[i]
-		if p == nil {
-			continue
-		}
-		if p.GetConcentration() <= 0 {
-			gridP := s.grid[p.GetXPos()][p.GetYPos()]
-			if gridP != nil && gridP.(*entity.Pheromone).GetConcentration() <= p.GetConcentration() {
-				s.grid[p.GetXPos()][p.GetYPos()] = nil
+		if p != nil {
+			if p.GetConcentration() <= 0 {
+				gridP := s.grid[p.GetXPos()][p.GetYPos()]
+				if gridP != nil && gridP.(*entity.Pheromone).GetConcentration() <= p.GetConcentration() {
+					s.grid[p.GetXPos()][p.GetYPos()] = nil
+				}
 			}
 		}
 	}
 	wg.Done()
-	log.Println("process chunk ended")
 }
 
 func (s *Scene) updateAnts() {
@@ -213,15 +140,6 @@ func (s *Scene) updateAnts() {
 }
 
 func (s *Scene) updateFood() {
-	// remove the food that has been collected
-	// TODO: fix this shit bruv
-	// for i, f := range s.food {
-	// 	if f.IsDestroyed() {
-	// 		// s.food = append(s.food[:i], s.food[i+1:]...)
-	// 		s.food = slices.Delete(s.food, i, i+1)
-	// 		s.grid[f.GetXPos()][f.GetYPos()] = nil
-	// 	}
-	// }
 	for _, f := range s.food {
 		if f.IsDestroyed() {
 			continue
@@ -231,13 +149,11 @@ func (s *Scene) updateFood() {
 }
 
 func (s *Scene) updateHud() {
-	spawnedFood := "Spawned food: " + strconv.FormatInt(int64(config.FoodCount), 10)
 	collectedFood := "Collected food: " + strconv.FormatInt(int64(s.home.GetFoodCount()), 10)
 	fpsText := "FPS: " + strconv.FormatInt(int64(rl.GetFPS()), 10)
 
-	rl.DrawText(spawnedFood, 10, 10, 15, rl.LightGray)
-	rl.DrawText(collectedFood, 10, 30, 15, rl.LightGray)
-	rl.DrawText(fpsText, 10, 50, 15, rl.LightGray)
+	rl.DrawText(collectedFood, 10, 10, 15, rl.LightGray)
+	rl.DrawText(fpsText, 10, 30, 15, rl.LightGray)
 }
 
 func checkAntCollision(ant *entity.Ant, food []*entity.Food, home *entity.Home) {
