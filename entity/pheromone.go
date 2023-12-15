@@ -23,9 +23,9 @@ func (p *Pheromone) Update() {
 }
 
 func (p *Pheromone) Draw() {
-	rl.DrawCircle(p.xPos, p.yPos, 1, rl.ColorAlpha(rl.Pink, p.concentration/2))
-	// draw a bigger circle around the pheromone with lower indensity
-	// rl.DrawCircle(p.xPos, p.yPos, 4, rl.ColorAlpha(rl.Pink, p.concentration/10))
+	if config.DrawPheromones {
+		rl.DrawCircle(p.xPos, p.yPos, 1, rl.ColorAlpha(rl.Pink, p.concentration/2))
+	}
 }
 
 func (p *Pheromone) GetConcentration() float32 {
