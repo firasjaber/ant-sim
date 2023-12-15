@@ -162,6 +162,10 @@ func (a *Ant) GetPosition() (int32, int32) {
 }
 
 func (a *Ant) SetState(state AntState) {
+	// if the previous state was returner, turn around 180 degrees
+	if a.state == RETURNER {
+		a.currDir = getOppisiteDirection(a.currDir)
+	}
 	a.state = state
 }
 
