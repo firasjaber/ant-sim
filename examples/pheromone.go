@@ -15,9 +15,6 @@ type PhScene struct {
 	grid       [][]interface{}
 }
 
-// implement a grid to represent the entities
-// the grid will be used to check for collisions
-
 func NewPhScene() *PhScene {
 	rl.InitWindow(config.WindowWidth, config.WindowHeight, config.WindowTitle)
 	rl.SetTargetFPS(config.TargetFPS)
@@ -32,9 +29,6 @@ func NewPhScene() *PhScene {
 			grid[i][j] = nil
 		}
 	}
-	// span entites
-	// spawn home
-	// spawn ants
 	// loop through the ants number range and create new ants
 	ants := []*PhAnt{}
 	// create a new ant

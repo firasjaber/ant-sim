@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func concurrentProcessing() {
+func ConcurrentProcessing() {
 	// DEBUG: Measure execution time
 	start := time.Now()
 	defer func() {
@@ -19,7 +19,7 @@ func concurrentProcessing() {
 		numbers[i] = i + 1
 	}
 	// Concurrent processing
-	numRoutines := 4
+	numRoutines := 2
 
 	var wg sync.WaitGroup
 
@@ -50,8 +50,4 @@ func processChunk(numbers []int, start, end int, wg *sync.WaitGroup) {
 	}
 	wg.Done()
 	log.Println("process chunk ended")
-}
-
-func main() {
-	concurrentProcessing()
 }

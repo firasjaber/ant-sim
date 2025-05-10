@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-func proccessing() {
+func Proccessing() {
 	// Setup the test array of numbers
 	numbers := make([]int, 10)
 	for i := 0; i < 10; i++ {
@@ -16,8 +16,4 @@ func proccessing() {
 		time.Sleep(1 * time.Second)
 	}
 
-}
-
-func main() {
-	proccessing()
 }
