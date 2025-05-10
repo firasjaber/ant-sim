@@ -107,16 +107,13 @@ func (a *Ant) FollowPathHome() {
 }
 
 func (a *Ant) Draw() {
-	// draw the path
-	// for _, p := range a.path {
-	// 	rl.DrawCircle(int32(p.X), int32(p.Y), 1, rl.ColorAlpha(rl.Purple, 0.1))
-	// }
-	// draw the ant
-	if a.state == RETURNER {
-		rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.Yellow)
-		return
+	if config.DrawAnts {
+		if a.state == RETURNER {
+			rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.Yellow)
+			return
+		}
+		rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.White)
 	}
-	rl.DrawRectangle(a.posX, a.posY, 10, 10, rl.White)
 }
 
 func (a *Ant) Update(pheromones []*Pheromone) {

@@ -1,6 +1,9 @@
 package entity
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	"github.com/firasjaber/ant-sim/config"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Home struct {
 	posX      int32
@@ -13,7 +16,9 @@ func NewHome(posX int32, posY int32) *Home {
 }
 
 func (h *Home) Update() {
-	h.Draw()
+	if config.DrawHome {
+		h.Draw()
+	}
 }
 
 func (h *Home) Draw() {

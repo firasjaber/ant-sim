@@ -1,6 +1,9 @@
 package entity
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	"github.com/firasjaber/ant-sim/config"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Food struct {
 	posX      int32
@@ -13,7 +16,9 @@ func NewFood(posX int32, posY int32) *Food {
 }
 
 func (f *Food) Update() {
-	f.Draw()
+	if config.DrawFood {
+		f.Draw()
+	}
 }
 
 func (f *Food) Draw() {
