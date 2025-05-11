@@ -16,7 +16,7 @@ A Go-based ant colony simulation that demonstrates emergent behavior and swarm i
 
 ## Examples
 
-[Include video demonstrations for each scenario here]
+ <video src="docs/ant_sim_four_nests.mp4" width="300" controls></video><video src="docs/ant_sim_surrounding_nest.mp4" width="300" controls></video> <video src="docs/ant_sim_pheromone_only.mp4" width="300" controls></video>
 
 ## Prerequisites
 
